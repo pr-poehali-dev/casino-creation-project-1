@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -22,16 +22,43 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
+import { useGoogleAuth } from '@/components/extensions/google-auth/useGoogleAuth';
+import { GoogleLoginButton } from '@/components/extensions/google-auth/GoogleLoginButton';
+
+const GOOGLE_AUTH_URL = 'https://functions.poehali.dev/a2e9f5b3-8042-4eec-b719-a9f77e1cea7d';
 
 const Index = () => {
   const [currentPage, setCurrentPage] = useState<'home' | 'games' | 'profile' | 'wallet' | 'support' | 'terms'>('home');
   const [balance, setBalance] = useState(15000);
   const [selectedPayment, setSelectedPayment] = useState<string | null>(null);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [showLoginDialog, setShowLoginDialog] = useState(false);
   const [showRegisterDialog, setShowRegisterDialog] = useState(false);
   const [loginForm, setLoginForm] = useState({ email: '', password: '' });
   const [registerForm, setRegisterForm] = useState({ name: '', email: '', password: '', confirmPassword: '' });
+
+  const googleAuth = useGoogleAuth({
+    apiUrls: {
+      authUrl: `${GOOGLE_AUTH_URL}?action=auth-url`,
+      callback: `${GOOGLE_AUTH_URL}?action=callback`,
+      refresh: `${GOOGLE_AUTH_URL}?action=refresh`,
+      logout: `${GOOGLE_AUTH_URL}?action=logout`,
+    },
+  });
+
+  const isAuthenticated = googleAuth.isAuthenticated;
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.has('code')) {
+      googleAuth.handleCallback(params).then((success) => {
+        if (success) {
+          window.history.replaceState({}, '', window.location.pathname);
+          setShowLoginDialog(false);
+          setShowRegisterDialog(false);
+        }
+      });
+    }
+  }, []);
 
   const games = [
     { id: 1, title: 'Lucky 7s', category: 'Слоты', rtp: '96.5%', image: '🎰', popular: true },
@@ -156,14 +183,21 @@ const Index = () => {
 
   const renderProfile = () => (
     <div className="space-y-6 animate-fade-in max-w-3xl">
-      <div className="flex items-center gap-4">
-        <Avatar className="h-20 w-20">
-          <AvatarFallback className="bg-primary text-2xl">ИП</AvatarFallback>
-        </Avatar>
-        <div>
-          <h1 className="text-3xl font-bold">Игрок #12345</h1>
-          <p className="text-muted-foreground">Участник с 15.01.2026</p>
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <Avatar className="h-20 w-20">
+            <AvatarFallback className="bg-primary text-2xl">
+              {googleAuth.user?.name?.[0]?.toUpperCase() || 'ИП'}
+            </AvatarFallback>
+          </Avatar>
+          <div>
+            <h1 className="text-3xl font-bold">{googleAuth.user?.name || 'Игрок #12345'}</h1>
+            <p className="text-muted-foreground">{googleAuth.user?.email || 'Участник с 15.01.2026'}</p>
+          </div>
         </div>
+        <Button variant="outline" onClick={googleAuth.logout}>
+          Выйти
+        </Button>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -545,13 +579,28 @@ const Index = () => {
               className="w-full" 
               size="lg"
               onClick={() => {
-                setIsAuthenticated(true);
                 setShowLoginDialog(false);
                 setLoginForm({ email: '', password: '' });
               }}
             >
               Войти
             </Button>
+            
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <span className="w-full border-t" />
+              </div>
+              <div className="relative flex justify-center text-xs uppercase">
+                <span className="bg-background px-2 text-muted-foreground">Или</span>
+              </div>
+            </div>
+
+            <GoogleLoginButton 
+              onClick={googleAuth.login}
+              isLoading={googleAuth.isLoading}
+              className="w-full"
+            />
+
             <div className="text-center text-sm text-muted-foreground">
               Нет аккаунта?{' '}
               <button
@@ -621,13 +670,28 @@ const Index = () => {
               className="w-full" 
               size="lg"
               onClick={() => {
-                setIsAuthenticated(true);
                 setShowRegisterDialog(false);
                 setRegisterForm({ name: '', email: '', password: '', confirmPassword: '' });
               }}
             >
               Зарегистрироваться
             </Button>
+
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <span className="w-full border-t" />
+              </div>
+              <div className="relative flex justify-center text-xs uppercase">
+                <span className="bg-background px-2 text-muted-foreground">Или</span>
+              </div>
+            </div>
+
+            <GoogleLoginButton 
+              onClick={googleAuth.login}
+              isLoading={googleAuth.isLoading}
+              className="w-full"
+            />
+
             <div className="text-center text-sm text-muted-foreground">
               Уже есть аккаунт?{' '}
               <button
