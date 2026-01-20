@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import Icon from '@/components/ui/icon';
@@ -13,11 +14,24 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from '@/components/ui/accordion';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
 
 const Index = () => {
   const [currentPage, setCurrentPage] = useState<'home' | 'games' | 'profile' | 'wallet' | 'support' | 'terms'>('home');
   const [balance, setBalance] = useState(15000);
   const [selectedPayment, setSelectedPayment] = useState<string | null>(null);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [showLoginDialog, setShowLoginDialog] = useState(false);
+  const [showRegisterDialog, setShowRegisterDialog] = useState(false);
+  const [loginForm, setLoginForm] = useState({ email: '', password: '' });
+  const [registerForm, setRegisterForm] = useState({ name: '', email: '', password: '', confirmPassword: '' });
 
   const games = [
     { id: 1, title: 'Lucky 7s', category: 'Слоты', rtp: '96.5%', image: '🎰', popular: true },
@@ -416,17 +430,30 @@ const Index = () => {
               </div>
             </div>
             <div className="flex items-center gap-4">
-              <Button variant="ghost" size="icon" onClick={() => setCurrentPage('wallet')}>
-                <Icon name="Wallet" />
-              </Button>
-              <Button variant="ghost" size="icon" onClick={() => setCurrentPage('profile')}>
-                <Icon name="User" />
-              </Button>
-              <div className="hidden md:block">
-                <Badge variant="secondary" className="px-4 py-2 text-base font-semibold">
-                  {balance.toLocaleString()} ₽
-                </Badge>
-              </div>
+              {isAuthenticated ? (
+                <>
+                  <Button variant="ghost" size="icon" onClick={() => setCurrentPage('wallet')}>
+                    <Icon name="Wallet" />
+                  </Button>
+                  <Button variant="ghost" size="icon" onClick={() => setCurrentPage('profile')}>
+                    <Icon name="User" />
+                  </Button>
+                  <div className="hidden md:block">
+                    <Badge variant="secondary" className="px-4 py-2 text-base font-semibold">
+                      {balance.toLocaleString()} ₽
+                    </Badge>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <Button variant="ghost" onClick={() => setShowLoginDialog(true)}>
+                    Вход
+                  </Button>
+                  <Button onClick={() => setShowRegisterDialog(true)}>
+                    Регистрация
+                  </Button>
+                </>
+              )}
             </div>
           </div>
         </div>
@@ -484,6 +511,138 @@ const Index = () => {
           </div>
         </div>
       </footer>
+
+      <Dialog open={showLoginDialog} onOpenChange={setShowLoginDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Вход в аккаунт</DialogTitle>
+            <DialogDescription>
+              Войдите в свой аккаунт, чтобы продолжить игру
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="login-email">Email</Label>
+              <Input
+                id="login-email"
+                type="email"
+                placeholder="your@email.com"
+                value={loginForm.email}
+                onChange={(e) => setLoginForm({ ...loginForm, email: e.target.value })}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="login-password">Пароль</Label>
+              <Input
+                id="login-password"
+                type="password"
+                placeholder="••••••••"
+                value={loginForm.password}
+                onChange={(e) => setLoginForm({ ...loginForm, password: e.target.value })}
+              />
+            </div>
+            <Button 
+              className="w-full" 
+              size="lg"
+              onClick={() => {
+                setIsAuthenticated(true);
+                setShowLoginDialog(false);
+                setLoginForm({ email: '', password: '' });
+              }}
+            >
+              Войти
+            </Button>
+            <div className="text-center text-sm text-muted-foreground">
+              Нет аккаунта?{' '}
+              <button
+                className="text-primary hover:underline"
+                onClick={() => {
+                  setShowLoginDialog(false);
+                  setShowRegisterDialog(true);
+                }}
+              >
+                Зарегистрируйтесь
+              </button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showRegisterDialog} onOpenChange={setShowRegisterDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Регистрация</DialogTitle>
+            <DialogDescription>
+              Создайте аккаунт, чтобы начать играть
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="register-name">Имя</Label>
+              <Input
+                id="register-name"
+                type="text"
+                placeholder="Ваше имя"
+                value={registerForm.name}
+                onChange={(e) => setRegisterForm({ ...registerForm, name: e.target.value })}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="register-email">Email</Label>
+              <Input
+                id="register-email"
+                type="email"
+                placeholder="your@email.com"
+                value={registerForm.email}
+                onChange={(e) => setRegisterForm({ ...registerForm, email: e.target.value })}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="register-password">Пароль</Label>
+              <Input
+                id="register-password"
+                type="password"
+                placeholder="••••••••"
+                value={registerForm.password}
+                onChange={(e) => setRegisterForm({ ...registerForm, password: e.target.value })}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="register-confirm">Подтвердите пароль</Label>
+              <Input
+                id="register-confirm"
+                type="password"
+                placeholder="••••••••"
+                value={registerForm.confirmPassword}
+                onChange={(e) => setRegisterForm({ ...registerForm, confirmPassword: e.target.value })}
+              />
+            </div>
+            <Button 
+              className="w-full" 
+              size="lg"
+              onClick={() => {
+                setIsAuthenticated(true);
+                setShowRegisterDialog(false);
+                setRegisterForm({ name: '', email: '', password: '', confirmPassword: '' });
+              }}
+            >
+              Зарегистрироваться
+            </Button>
+            <div className="text-center text-sm text-muted-foreground">
+              Уже есть аккаунт?{' '}
+              <button
+                className="text-primary hover:underline"
+                onClick={() => {
+                  setShowRegisterDialog(false);
+                  setShowLoginDialog(true);
+                }}
+              >
+                Войдите
+              </button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
